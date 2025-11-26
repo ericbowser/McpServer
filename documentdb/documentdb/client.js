@@ -42,7 +42,7 @@ async function connectLocalDockerPostgres() {
 		const pool = new Pool({
 			user: 'postgres',
 			host: '127.0.0.1',
-			password: '1006',
+			password: '',
 			database: 'postgres',
 			port: 5432
 		});
@@ -54,5 +54,6 @@ async function connectLocalDockerPostgres() {
 		console.log(e);
 	}
 }
+
 
 module.exports = {connectLocalPostgres, connectLocalDockerPostgres};
