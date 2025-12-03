@@ -7,7 +7,7 @@ function initialize() {
   log4js.addLayout('json', jsonLayout);
   log4js.configure({
     appenders: {
-      backendLaser: {
+      mcpServer: {
         type: "fileSync",
         filename: "backendLaser.log",
         maxLogSize: 10458760, //10 MB
@@ -31,12 +31,12 @@ function initialize() {
         type: 'json'
       }
     },
-    assist_console: {
+  assist_console: {
       type: "out"
     },
     categories: {
       default: {
-        appenders: ['backendLaser', 'out'],
+        appenders: ['mcpServer', 'jsonLayout', 'out'],
         level: 'debug'
       }
     },
