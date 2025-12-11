@@ -1,10 +1,6 @@
-const Path = require('path');
-const dotenv = require("dotenv");
-const config = dotenv.config({path: Path.resolve(__dirname, '.env')});
-const server = require('./server');
+const server = require('./server');  // Updated to use server.js
 const http = require("node:http");
-const cors = require('cors');
-const logger = require('./logs/McpLog');
+const logger = require('./logs/mcpLog');
 const _logger = logger();
 _logger.info('Starting LaserTags API');
 
@@ -13,31 +9,40 @@ const express = require("express");
 const {serve, setup} = require("swagger-ui-express");
 
 const httpPort = process.env.PORT || 3003;
-console.log('passed port to use for http', httpPort);
+console.log('LaserTags API starting on port:', httpPort);
 
 const app = express();
+
+// IMPORTANT: Mount server routes BEFORE any body parsing middleware
+// This ensures the Stripe webhook with raw body works correctly
 app.use(server);
+
+// Then add general middleware
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
 
 const swaggerOptions = {
     definition: {
-        schemes: ['http'],
+        schemes: ['http', 'https'],
         openapi: "3.0.0",
         info: {
-            title: 'Mcp Api',
-            version: '0.0.1',
-            description: 'API for LaserTags',
+            title: 'LaserTags API',
+            version: '1.0.0',
+            description: 'API for LaserTags Pet ID E-commerce Platform',
         },
         contact:{
             name: 'API Support',
-            url: '',
-            email: 'erbows@collar-culture.com'
+            url: 'https://lasertags.com',
+            email: 'support@lasertags.com'
         },
         servers: [
             {
                 url: `http://localhost:${httpPort}`,
-                definition: 'Local API'
+                description: 'Local development server'
+            },
+            {
+                url: 'https://api.lasertags.com',
+                description: 'Production server'
             }
         ]
     },
@@ -49,6 +54,7 @@ const swaggerDocs = swaggerJsdoc(swaggerOptions);
 app.use('/api-docs', serve, setup(swaggerDocs))
 
 httpServer.listen(httpPort, () => {
-    console.log(`Server listening on http://localhost:${httpPort}`);
+    console.log(`✅ LaserTags API running at http://localhost:${httpPort}`);
+    console.log(`📚 API Documentation at http://localhost:${httpPort}/api-docs`);
+    console.log(`🏥 Health check at http://localhost:${httpPort}/api/health`);
 });
-

@@ -1,5 +1,5 @@
 const log4js = require('log4js');
-const jsonLayout = require('log4js-json-layout').layout;
+const jsonLayout = require('log4js-json-layout').jsonLayout;
 
 let _logger = null;
 
@@ -9,7 +9,7 @@ function initialize() {
     appenders: {
       mcpServer: {
         type: "fileSync",
-        filename: "backendLaser.log",
+        filename: "mcpServer.log",
         maxLogSize: 10458760, //10 MB
         backups: 3,
         layout: {

@@ -1,17 +1,21 @@
 {
-  "name": "CloudPrepperMcp",
-  "version": "0.0.1",
-  "description": "An Mcp Server Definition",
+  "name": "LaserTags-Backend",
+  "version": "1.0.0",
+  "description": "LaserTags Pet ID Tag E-commerce Backend",
   "main": "index.js",
   "keywords": [
-    "MCP",
-    "Server"
+    "laser-engraving",
+    "pet-tags",
+    "e-commerce",
+    "qr-codes"
   ],
-  "author": "Us",
+  "author": "Execute & Engrave LLC",
   "license": "MIT",
   "scripts": {
-    "build": "npm run build",
-    "dev": "npm install && nodemon index.js",
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "db:setup": "psql -U postgres -f ./documentdb/lasertags-schema.sql",
+    "test": "jest",
     "clean": "rm -R node_modules && rm package-lock.json && npm install"
   },
   "dependencies": {
@@ -19,18 +23,22 @@
     "body-parser": "^1.20.3",
     "cors": "^2.8.5",
     "express": "^4.21.1",
-    "express-router": "^0.0.1",
+    "express-rate-limit": "^6.7.0",
+    "express-validator": "^7.0.1",
+    "helmet": "^7.0.0",
     "log4js": "^6.9.1",
     "log4js-json-layout": "^2.2.3",
-    "node-postgres": "^0.6.2",
     "nodemailer": "^7.0.11",
     "pg": "^8.12.0",
-    "process": "^0.11.10",
-    "url": "^0.11.3"
+    "qrcode": "^1.5.3",
+    "stripe": "^13.10.0",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
+    "jest": "^29.5.0",
     "nodemon": "^3.1.7",
     "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1"
+    "swagger-ui-express": "^5.0.1",
+    "typescript": "^5.9.3"
   }
 }
