@@ -1,29 +1,27 @@
-﻿const {Client, Pool} = require('pg');
-const config = require("dotenv").config();
+const {Client, Pool} = require('pg');
 const path = require('path');
-const getLogger = require("../logs/McpLog.js");
+const getLogger = require("../logs/mcpLog.js");
 let _logger = getLogger();
-
-// Change .env based on local dev or prod
-const env = path.resolve(__dirname, '.env');
-const options = {
-	path: env
-};
 
 let client = null;
 
-const connectionString =
-	`postgres://${config.parsed.DB_USER}:${config.parsed.DB_PASSWORD}@${config.parsed.DB_SERVER}:${config.parsed.DB_PORT}/postgres`;
+// Database connection configuration
+const dbConfig = {
+	user: process.env.DB_USER || 'postgres',
+	password: process.env.DB_PASSWORD || '',
+	host: process.env.DB_SERVER || 'localhost',
+	port: process.env.DB_PORT || 5432,
+	database: 'postgres',
+	ssl: false
+};
 
 async function connectLocalPostgres() {
 	try {
 		if (!client) {
 			_logger.info('Connecting to local postgres..');
-			client = new Client({
-				connectionString: connectionString,
-				ssl: false
-			});
+			client = new Client(dbConfig);
 			await client.connect();
+			_logger.info('Successfully connected to PostgreSQL');
 		}
 
 		return client;
@@ -32,4 +30,5 @@ async function connectLocalPostgres() {
 		throw error;
 	}
 }
+
 module.exports = {connectLocalPostgres};

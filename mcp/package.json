@@ -1,0 +1,31 @@
+{
+  "name": "lasertags-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP Server for LaserTags Business Management - AI-powered contact and order tracking",
+  "type": "module",
+  "main": "index.js",
+  "bin": {
+    "lasertags-mcp": "./index.js"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "lasertags",
+    "business-automation",
+    "ai-integration"
+  ],
+  "author": "Eric",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "axios": "^1.7.2",
+    "pg": "^8.12.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.7"
+  }
+}

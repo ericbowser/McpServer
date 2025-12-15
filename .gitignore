@@ -13,9 +13,25 @@ node_modules/
 
 *.log
  
-.env
+/mcp/.env
+/mcp/.env.example
 .env.me
 .env.me.bak
 .idea
+/mcp/node_modules
 
+env.json
+/mcp/claude_desktop_config.json
+
+/documentdb/lasertags-schema.sql
+logs/
+
+mcp/LAUNCH_CHECKLIST.md
+mcp/PROJECT_MANAGEMENT.md
+mcp/README.md
+verify-tables.js
+/mcp/verify-tables.js
+
+mcp/README.md
+mcp/setup.bat
 dotenv-encrypt_log.json

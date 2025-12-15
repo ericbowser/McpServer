@@ -5,10 +5,12 @@ const path = require('path');
 const { exec } = require('child_process');
 const { promisify } = require('util');
 const logger = require('./logs/mcpLog');
+const {LASERTAGS_PROJECT_PATH} = require('./env.json');
+
 const _logger = logger();
 
 const execAsync = promisify(exec);
-const LASERTAGS_PROJECT_PATH = 'C:/Projects/LaserTags';
+const projectPath = LASERTAGS_PROJECT_PATH;
 
 // Helper function to safely read JSON files
 async function readJsonFile(filePath) {
@@ -109,11 +111,11 @@ async function getDirectoryStructure(dirPath, maxDepth = 2, currentDepth = 0) {
 // Health check endpoint
 router.get('/api/health', async (req, res) => {
     try {
-        const projectExists = await pathExists(LASERTAGS_PROJECT_PATH);
+        const projectExists = await pathExists(projectPath);
         res.json({
             status: 'healthy',
             timestamp: new Date().toISOString(),
-            projectPath: LASERTAGS_PROJECT_PATH,
+            projectPath: projectPath,
             projectExists: projectExists
         });
     } catch (error) {
@@ -125,8 +127,8 @@ router.get('/api/health', async (req, res) => {
 // Get project information
 router.get('/api/project/info', async (req, res) => {
     try {
-        const packageJsonPath = path.join(LASERTAGS_PROJECT_PATH, 'package.json');
-        const readmePath = path.join(LASERTAGS_PROJECT_PATH, 'README.md');
+        const packageJsonPath = path.join(projectPath, 'package.json');
+        const readmePath = path.join(projectPath, 'README.md');
         
         const packageJson = await readJsonFile(packageJsonPath);
         let readme = null;
@@ -137,10 +139,10 @@ router.get('/api/project/info', async (req, res) => {
             _logger.warn('README not found');
         }
         
-        const projectExists = await pathExists(LASERTAGS_PROJECT_PATH);
+        const projectExists = await pathExists(projectPath);
         
         res.json({
-            projectPath: LASERTAGS_PROJECT_PATH,
+            projectPath: projectPath,
             exists: projectExists,
             packageJson: packageJson,
             readme: readme ? readme.substring(0, 500) : null, // First 500 chars
@@ -155,15 +157,15 @@ router.get('/api/project/info', async (req, res) => {
 // Get project status (git, recent changes)
 router.get('/api/project/status', async (req, res) => {
     try {
-        const projectExists = await pathExists(LASERTAGS_PROJECT_PATH);
+        const projectExists = await pathExists(projectPath);
         if (!projectExists) {
             return res.status(404).json({ error: 'Project path does not exist' });
         }
         
-        const gitStatus = await getGitStatus(LASERTAGS_PROJECT_PATH);
+        const gitStatus = await getGitStatus(projectPath);
         
         // Get package.json info
-        const packageJsonPath = path.join(LASERTAGS_PROJECT_PATH, 'package.json');
+        const packageJsonPath = path.join(projectPath, 'package.json');
         const packageJson = await readJsonFile(packageJsonPath);
         
         // Check for common files
@@ -171,12 +173,12 @@ router.get('/api/project/status', async (req, res) => {
         const fileStatus = {};
         
         for (const file of commonFiles) {
-            const filePath = path.join(LASERTAGS_PROJECT_PATH, file);
+            const filePath = path.join(projectPath, file);
             fileStatus[file] = await pathExists(filePath);
         }
         
         res.json({
-            projectPath: LASERTAGS_PROJECT_PATH,
+            projectPath: projectPath,
             git: gitStatus,
             packageJson: packageJson ? {
                 name: packageJson.name,
@@ -196,16 +198,16 @@ router.get('/api/project/status', async (req, res) => {
 // Get project structure
 router.get('/api/project/structure', async (req, res) => {
     try {
-        const projectExists = await pathExists(LASERTAGS_PROJECT_PATH);
+        const projectExists = await pathExists(projectPath);
         if (!projectExists) {
             return res.status(404).json({ error: 'Project path does not exist' });
         }
         
         const maxDepth = parseInt(req.query.depth) || 2;
-        const structure = await getDirectoryStructure(LASERTAGS_PROJECT_PATH, maxDepth);
+        const structure = await getDirectoryStructure(projectPath, maxDepth);
         
         res.json({
-            projectPath: LASERTAGS_PROJECT_PATH,
+            projectPath: projectPath,
             structure: structure,
             timestamp: new Date().toISOString()
         });
@@ -228,7 +230,7 @@ router.get('/api/project/file', async (req, res) => {
             return res.status(400).json({ error: 'Invalid file path' });
         }
         
-        const filePath = path.join(LASERTAGS_PROJECT_PATH, file);
+        const filePath = path.join(projectPath, file);
         const exists = await pathExists(filePath);
         
         if (!exists) {
@@ -263,7 +265,7 @@ router.get('/api/project/file', async (req, res) => {
 // Get dependencies information
 router.get('/api/project/dependencies', async (req, res) => {
     try {
-        const packageJsonPath = path.join(LASERTAGS_PROJECT_PATH, 'package.json');
+        const packageJsonPath = path.join(projectPath, 'package.json');
         const packageJson = await readJsonFile(packageJsonPath);
         
         if (!packageJson) {
@@ -287,7 +289,7 @@ router.get('/api/project/dependencies', async (req, res) => {
 // Get recent changes (git log)
 router.get('/api/project/changes', async (req, res) => {
     try {
-        const projectExists = await pathExists(LASERTAGS_PROJECT_PATH);
+        const projectExists = await pathExists(projectPath);
         if (!projectExists) {
             return res.status(404).json({ error: 'Project path does not exist' });
         }
@@ -295,7 +297,7 @@ router.get('/api/project/changes', async (req, res) => {
         const limit = parseInt(req.query.limit) || 10;
         const { stdout } = await execAsync(
             `git log -${limit} --format=%H|%s|%an|%ad --date=iso`,
-            { cwd: LASERTAGS_PROJECT_PATH }
+            { cwd: projectPath }
         );
         
         const commits = stdout.trim().split('\n').filter(line => line).map(line => {
