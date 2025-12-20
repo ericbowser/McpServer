@@ -347,11 +347,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             // Use quote_ident to safely escape the database name
             const quotedDb = await quoteIdent(createDbClient, database);
             await createDbClient.query(`CREATE DATABASE ${quotedDb}`);
-            await createDbClient.end();
           } catch (error) {
             if (!error.message.includes('already exists')) {
+              await createDbClient.end();
               throw new Error(`Failed to create database: ${error.message}`);
             }
+          } finally {
+            // Always close the connection, even if database already exists
+            await createDbClient.end();
           }
         }
 
@@ -594,8 +597,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             pg_size_pretty(pg_total_relation_size($1::regclass) - pg_relation_size($1::regclass)) as indexes_size
         `, [qualifiedName]);
 
-        // Get row count - use quoted identifiers
-        const countResult = await client.query(`SELECT count(*) as row_count FROM ${quotedSchema}.${quotedTable}`);
+        // Get row count - use qualified name (already safely quoted via quote_ident)
+        const countResult = await client.query(`SELECT count(*) as row_count FROM ${qualifiedName}`);
 
         // Get columns
         const columnsResult = await client.query(`
