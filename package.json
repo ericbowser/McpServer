@@ -35,7 +35,6 @@
     "uuid": "^9.0.1"
   },
   "devDependencies": {
-    "dotenv": "^17.2.3",
     "jest": "^29.5.0",
     "nodemon": "^3.1.7",
     "swagger-jsdoc": "^6.2.8",

@@ -1,6 +1,5 @@
 const {Client, Pool} = require('pg');
 const path = require('path');
-const getLogger = require("../logs/mcpLog.js");
 let _logger = getLogger();
 
 let client = null;
