@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "postgres": {
+      "command": "node",
+      "args": [
+        "C:\\Projects\\McpServer\\postgres_mcp\\index.js"
+      ],
+      "env": {
+        "DB_USER": "postgres",
+        "DB_HOST": "localhost",
+        "DB_NAME": "postgres",
+        "DB_PASSWORD": "your_password_here",
+        "DB_PORT": "5432",
+        "BACKUP_DIR": "C:\\Projects\\McpServer\\postgres_mcp\\backups"
+      }
+    }
+  }
+}
+

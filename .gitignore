@@ -21,7 +21,6 @@ node_modules/
 /mcp/node_modules
 
 env.json
-/mcp/claude_desktop_config.json
 
 /documentdb/lasertags-schema.sql
 logs/
@@ -31,7 +30,29 @@ mcp/PROJECT_MANAGEMENT.md
 mcp/README.md
 verify-tables.js
 /mcp/verify-tables.js
+/mcp/schema-updates.sql
+/mcp/index.js.backup_20251220
+/mcp/.env.template
+/mcp/.env
+/mcp/env.json.template
+/mcp/env.json
+/mcp/env.json.backup_20251220
+/mcp/env.json.backup_20251220.bak
+/mcp/env.json.backup_20251220.bak.bak
+/mcp/env.json.backup_20251220.bak.bak.bak
+/mcp/env.json.backup_20251220.bak.bak.bak.bak
+/mcp/claude_desktop_config.json
 
-mcp/README.md
+/postgres_mcp/node_modules
+/postgres_mcp/.env
+
 mcp/setup.bat
 dotenv-encrypt_log.json
+verify-integration.bat
+schema-updates.sql
+
+# PostgreSQL backups
+postgres_mcp/backups/
+*.dump
+*.tar
+*.sql.backup
