@@ -129,8 +129,12 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             format: {
               type: 'string',
-              enum: ['custom', 'plain', 'tar'],
-              description: 'Backup format: custom (recommended), plain (SQL), or tar (default: custom)',
+              enum: ['custom', 'plain', 'tar', 'inserts'],
+              description: 'Backup format: custom (recommended), plain (SQL), tar, or inserts (INSERT statements) (default: custom)',
+            },
+            schema: {
+              type: 'string',
+              description: 'Schema name to backup (optional, backs up all schemas if not specified)',
             },
           },
         },
@@ -264,10 +268,21 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case 'create_backup': {
         const database = args.database || DB_CONFIG.database;
         const format = args.format || 'custom';
+        const schema = args.schema || null;
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+        
+        // Determine file extension based on format
+        let ext;
+        if (format === 'custom') ext = 'dump';
+        else if (format === 'tar') ext = 'tar';
+        else if (format === 'inserts') ext = 'sql';
+        else ext = 'sql';
+        
         const filename = args.filename 
-          ? `${args.filename}.${format === 'custom' ? 'dump' : format === 'tar' ? 'tar' : 'sql'}`
-          : `${database}_${timestamp}.${format === 'custom' ? 'dump' : format === 'tar' ? 'tar' : 'sql'}`;
+          ? `${args.filename}.${ext}`
+          : schema 
+            ? `${database}_${schema}_${timestamp}.${ext}`
+            : `${database}_${timestamp}.${ext}`;
         const backupPath = join(BACKUP_DIR, filename);
 
         // Validate database name to prevent injection
@@ -275,9 +290,30 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           throw new Error(`Invalid database name: ${database}`);
         }
         
-        // Build pg_dump command with escaped database name
+        // Validate schema name if provided
+        if (schema && !isValidIdentifier(schema)) {
+          throw new Error(`Invalid schema name: ${schema}`);
+        }
+        
+        // Build pg_dump command with escaped identifiers
         const safeDatabase = escapeShellIdentifier(database);
-        const pgDumpCmd = `pg_dump -h ${DB_CONFIG.host} -p ${DB_CONFIG.port} -U ${DB_CONFIG.user} -F ${format} -f "${backupPath}" ${safeDatabase}`;
+        let pgDumpCmd = `pg_dump -h ${DB_CONFIG.host} -p ${DB_CONFIG.port} -U ${DB_CONFIG.user}`;
+        
+        // Add format flag (for inserts, we use plain format with --inserts flag)
+        if (format === 'inserts') {
+          pgDumpCmd += ` -F plain --inserts`;
+        } else {
+          pgDumpCmd += ` -F ${format}`;
+        }
+        
+        // Add schema filter if specified
+        if (schema) {
+          const safeSchema = escapeShellIdentifier(schema);
+          pgDumpCmd += ` -n ${safeSchema}`;
+        }
+        
+        // Add output file and database
+        pgDumpCmd += ` -f "${backupPath}" ${safeDatabase}`;
         
         // Set PGPASSWORD environment variable
         const env = { ...process.env, PGPASSWORD: DB_CONFIG.password };
@@ -297,6 +333,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 type: 'text',
                 text: `✅ Backup created successfully!\n\n` +
                       `Database: ${database}\n` +
+                      (schema ? `Schema: ${schema}\n` : '') +
                       `Format: ${format}\n` +
                       `Filename: ${filename}\n` +
                       `Path: ${backupPath}\n` +

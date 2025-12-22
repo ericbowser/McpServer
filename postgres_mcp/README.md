@@ -59,7 +59,8 @@ Add to your Claude Desktop config (`claude_desktop_config.json`):
 - **create_backup**: Create a database backup
   - `database` (optional): Database name (default: DB_NAME)
   - `filename` (optional): Custom filename
-  - `format` (optional): `custom` (recommended), `plain`, or `tar`
+  - `format` (optional): `custom` (recommended), `plain`, `tar`, or `inserts` (INSERT statements)
+  - `schema` (optional): Schema name to backup (backs up all schemas if not specified)
 
 - **list_backups**: List all available backups
   - `database` (optional): Filter by database name
@@ -91,6 +92,12 @@ node backup.js mydatabase
 
 # Backup with custom filename
 node backup.js mydatabase my_backup
+
+# Backup specific schema
+node backup.js mydatabase my_backup public
+
+# Backup with INSERT format (set BACKUP_FORMAT=inserts)
+BACKUP_FORMAT=inserts node backup.js mydatabase my_backup public
 ```
 
 ### Restore Script
@@ -111,6 +118,26 @@ node restore.js backup_file.dump mydatabase --create-db
 - **custom** (recommended): PostgreSQL custom format, compressed, supports selective restore
 - **plain**: SQL text format, human-readable, uncompressed
 - **tar**: TAR archive format, compressed, supports selective restore
+- **inserts**: SQL INSERT statements format, human-readable, portable across PostgreSQL versions
+
+## Schema Filtering
+
+You can backup a specific schema by providing the `schema` parameter:
+
+```bash
+# Via MCP tool
+Create a backup of the postgres database in the public schema using INSERT format
+```
+
+```bash
+# Via standalone script
+node backup.js postgres my_backup public
+```
+
+This is useful for:
+- Backing up specific application schemas
+- Creating portable INSERT scripts for data migration
+- Generating SQL scripts that can be easily edited
 
 ## Backup Directory
 
