@@ -11,7 +11,7 @@ const dbConfig = {
 	password: process.env.DB_PASSWORD || '',
 	host: process.env.DB_SERVER || 'localhost',
 	port: process.env.DB_PORT || 5432,
-	database: 'postgres',
+	database: 'ericbo',
 	ssl: false
 };
 

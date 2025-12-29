@@ -5,7 +5,8 @@ const path = require('path');
 const { exec } = require('child_process');
 const { promisify } = require('util');
 const logger = require('./logs/mcpLog');
-const {LASERTAGS_PROJECT_PATH} = require('./env.json');
+const config = require('dotenv').config();
+const {LASERTAGS_PROJECT_PATH} = config.parsed;
 
 const _logger = logger();
 

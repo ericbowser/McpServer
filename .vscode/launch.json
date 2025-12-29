@@ -5,6 +5,15 @@
     "version": "0.2.0",
     "configurations": [
     {
+        "name": "Launch Program",
+        "program": "${workspaceFolder}/start-all-mcp.bat",
+        "request": "launch",
+        "skipFiles": [
+            "<node_internals>/**"
+        ],
+        "type": "node"
+    },
+    {
         "command": "npm dev",
         "name": "Run npm dev",
         "request": "launch",

@@ -1,13 +1,15 @@
 {
   "name": "LaserTags-Backend",
   "version": "1.0.0",
-  "description": "LaserTags Pet ID Tag E-commerce Backend",
+  "description": "LaserTags Pet ID Tag E-commerce Backend with MCP Server Management",
   "main": "index.js",
   "keywords": [
     "laser-engraving",
     "pet-tags",
     "e-commerce",
-    "qr-codes"
+    "qr-codes",
+    "mcp",
+    "model-context-protocol"
   ],
   "author": "Execute & Engrave LLC",
   "license": "MIT",
@@ -16,7 +18,19 @@
     "dev": "nodemon index.js",
     "db:setup": "psql -U postgres -f ./documentdb/lasertags-schema.sql",
     "test": "jest",
-    "clean": "rm -R node_modules && rm package-lock.json && npm install"
+    "clean": "rm -R node_modules && rm package-lock.json && npm install",
+    "mcp:build": "npm run mcp:build:cloudprepper",
+    "mcp:build:cloudprepper": "cd cloudprepper_mcp && npm run build",
+    "mcp:install:all": "npm run mcp:install:cloudprepper && npm run mcp:install:lasertags && npm run mcp:install:postgres",
+    "mcp:install:cloudprepper": "cd cloudprepper_mcp && npm install",
+    "mcp:install:lasertags": "cd lasertg_mcp && npm install",
+    "mcp:install:postgres": "cd postgres_mcp && npm install",
+    "mcp:setup": "npm run mcp:install:all && npm run mcp:build",
+    "mcp:test:cloudprepper": "cd cloudprepper_mcp && npm run inspect",
+    "mcp:test:lasertags": "cd lasertg_mcp && node index.js",
+    "mcp:test:postgres": "cd postgres_mcp && node index.js",
+    "mcp:run:all": "start-all-mcp.bat",
+    "inspect": "npm run mcp:test:cloudprepper"
   },
   "dependencies": {
     "axios": "^1.7.2",
@@ -35,6 +49,7 @@
     "uuid": "^9.0.1"
   },
   "devDependencies": {
+    "dotenv": "^17.2.3",
     "jest": "^29.5.0",
     "nodemon": "^3.1.7",
     "swagger-jsdoc": "^6.2.8",

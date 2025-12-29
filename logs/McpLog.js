@@ -8,7 +8,7 @@ function initialize() {
       // File appender for McpServer logs
       mcpServer: {
         type: "file",
-        filename: "mcpServer.log",
+        filename: "logs/mcpServer.log",
         maxLogSize: 10485760, // 10 MB
         backups: 3,
         layout: {
