@@ -1,7 +1,3 @@
-# MCP Servers - Unified Configuration
-
-This parent solution houses three MCP (Model Context Protocol) servers that can be used together with Claude Desktop.
-
 ## Available MCP Servers
 
 ### 1. CloudPrepper MCP (`cloudprepper-mcp/`)
@@ -47,31 +43,9 @@ npm run mcp:build:cloudprepper
 npm run mcp:setup
 ```
 
-## Claude Desktop Configuration
-
-### Unified Configuration File
-
-A unified configuration file is available at:
-```
-claude_desktop_config_unified.json
-```
-
-This file includes all three MCP servers with their proper configurations.
-
-### How to Use
-
-1. **Copy the unified config** to your Claude Desktop config location:
-   - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
-   - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-   - Linux: `~/.config/Claude/claude_desktop_config.json`
-
-2. **Or merge** the `mcpServers` section into your existing Claude Desktop config
-
-3. **Restart Claude Desktop** to load the new configuration
-
 ### Configuration Details
 
-The unified config includes:
+The config includes:
 
 - **cloudprepper_mcp**: CloudPrepper certification exam tools
   - No environment variables required
@@ -87,7 +61,6 @@ The unified config includes:
   - Backup directory path
 
 - **filesystem**: File system access (optional)
-  - Provides file system tools to Claude
 
 ## Management Scripts
 
@@ -215,9 +188,6 @@ McpServer/
 ```
 
 ## Next Steps
+Run `npm run mcp:setup` to install and build everything
 
-1. Run `npm run mcp:setup` to install and build everything
-2. Copy `claude_desktop_config_unified.json` to your Claude Desktop config
-3. Restart Claude Desktop
-4. Start using all three MCP servers in Claude Desktop!
 
