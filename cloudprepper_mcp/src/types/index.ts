@@ -44,9 +44,10 @@ export interface GeneratedQuestion {
   question_text: string;
   options: string[];
   correct_answers: number[]; // Array of indices (0-based)
+  multiple_answers: string;
   explanation: string;
   domain: CloudPlusDomain | string; // Allow CloudPlusDomain enum or string for flexibility
-  subdomain?: string;
+  category?: string;
   cognitive_level: CognitiveLevel;
   skill_level: SkillLevel;
   tags: string[];

@@ -1,0 +1,85 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database - shared by lasertg_mcp and postgres_mcp
+  postgres:
+    image: postgres:16-alpine
+    container_name: mcp-postgres
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_DATABASE}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # CloudPrepper MCP Server
+  cloudprepper_mcp:
+    build:
+      context: ./cloudprepper_mcp
+      dockerfile: Dockerfile
+    container_name: cloudprepper_mcp
+    environment:
+      - CLOUDPREPPER_API_URL=${CLOUDPREPPER_API_URL:-http://host.docker.internal:36236}
+      - CLOUDPREPPER_API_TOKEN=${CLOUDPREPPER_API_TOKEN}
+      - NODE_ENV=${NODE_ENV:-production}
+    stdin_open: true
+    tty: true
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  # LaserTags MCP Server
+  lasertg_mcp:
+    build:
+      context: ./lasertg_mcp
+      dockerfile: Dockerfile
+    container_name: lasertg_mcp
+    environment:
+      - LASER_BACKEND_URL=${LASER_BACKEND_URL:-http://host.docker.internal:3003}
+      - DB_USER=${DB_USER}
+      - DB_HOST=${DB_HOST}
+      - DB_NAME=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_PORT=${DB_PORT}
+    stdin_open: true
+    tty: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  # Postgres MCP Server
+  postgres_mcp:
+    build:
+      context: ./postgres_mcp
+      dockerfile: Dockerfile
+    container_name: postgres_mcp
+    environment:
+      - DB_USER=${DB_USER}
+      - DB_HOST=${DB_HOST}
+      - DB_NAME=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_PORT=${DB_PORT}
+      - BACKUP_DIR=/app/backups
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./postgres_mcp/backups:/app/backups
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres:
+    name: postgres

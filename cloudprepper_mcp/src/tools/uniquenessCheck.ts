@@ -141,7 +141,7 @@ export async function handleUniquenessCheck(
     const recommendations = [];
     if (exactDuplicates.length > 0) {
       recommendations.push(
-        `Remove or rewrite ${exactDuplicates.reduce((sum, d) => sum + (d.duplicate_count - 1), 0)} duplicate questions`
+        `Remove or rewrite ${exactDuplicates.reduce((sum: number, d: any) => sum + (d.duplicate_count - 1), 0)} duplicate questions`
       );
     }
     if (sameOptions.length > 0) {
@@ -174,7 +174,7 @@ export async function handleUniquenessCheck(
                 unique_option_sets: parseInt(stats.unique_option_sets),
                 domain_filter: check_domain || 'all domains',
               },
-              exact_duplicates: exactDuplicates.map((d) => ({
+              exact_duplicates: exactDuplicates.map((d: any) => ({
                 question_text_preview: d.question_text.substring(0, 100) + '...',
                 duplicate_count: d.duplicate_count,
                 question_ids: d.question_ids,

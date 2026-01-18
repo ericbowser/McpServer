@@ -16,7 +16,7 @@ cd C:\Projects\McpServer\cloudprepper_mcp
 
 Create `.env` file:
 ```env
-BACKEND_URL=http://localhost:3000
+BACKEND_URL=http://localhost:36236
 BACKEND_JWT_TOKEN=your-jwt-token-here
 ```
 
@@ -26,7 +26,7 @@ You need a JWT token to authenticate with your backend. Two options:
 
 **Option A: Login via API**
 ```bash
-curl -X POST http://localhost:3000/auth/login \
+curl -X POST http://localhost:36236/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username":"your-username","password":"your-password"}'
 ```

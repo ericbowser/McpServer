@@ -1,4 +1,4 @@
-const log4js = require('log4js');
+import log4js from 'log4js';
 
 let _logger = null;
 
@@ -35,7 +35,7 @@ function initialize() {
   _logger = log4js;
 }
 
-function logger() {
+export default function logger() {
   if (!_logger) {
     initialize();
     return _logger.getLogger();
@@ -43,5 +43,3 @@ function logger() {
 
   return _logger.getLogger();
 }
-
-module.exports = logger;

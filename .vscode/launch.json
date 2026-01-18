@@ -15,7 +15,7 @@
     },
     {
         "command": "npm dev",
-        "name": "Run npm dev",
+        "name": "Run npm inspect",
         "request": "launch",
         "type": "node-terminal"
     },

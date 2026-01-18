@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  cloudprepper-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cloudprepper-mcp
+    environment:
+      # API Configuration
+      - CLOUDPREPPER_API_URL=${CLOUDPREPPER_API_URL:-http://host.docker.internal:36236}
+      - CLOUDPREPPER_API_TOKEN=${CLOUDPREPPER_API_TOKEN}
+      - NODE_ENV=${NODE_ENV:-production}
+    # MCP servers communicate via stdio, so we use stdin_open and tty
+    stdin_open: true
+    tty: true
+    # Mount .env file for easier configuration
+    volumes:
+      - ./.env:/app/.env:ro
+    # Network mode to access host services (like the API on localhost:36236)
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped

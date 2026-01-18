@@ -113,7 +113,7 @@ export async function handleCognitiveLevelAnalysis(
     console.error(`Found ${questions.length} questions to analyze`);
 
     // Analyze each question and suggest cognitive level
-    const analyses = questions.map((q) => {
+    const analyses = questions.map((q: any) => {
       const suggestedLevel = suggestCognitiveLevel(q.question_text, q.skill_level);
       return {
         id: q.id,

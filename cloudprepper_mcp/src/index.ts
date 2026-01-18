@@ -1,16 +1,26 @@
 #!/usr/bin/env node
+import 'dotenv/config.js';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
+// @ts-ignore - JavaScript logger module
+import logger from '../logs/cloudPrepperLog.js';
+const _logger = logger();
+
+_logger.info('Starting CloudPrepper MCP server');
 
 // Import tool definitions and handlers
 import {
   questionGeneratorTool,
   handleQuestionGeneration,
 } from './tools/questionGenerator.js';
+import {
+  questionBatchGeneratorTool,
+  handleQuestionBatchGeneration,
+} from './tools/questionBatchGenerator.js';
 import {
   questionQualityTool,
   handleQualityAnalysis,
@@ -31,6 +41,10 @@ import {
   uniquenessCheckTool,
   handleUniquenessCheck,
 } from './tools/uniquenessCheck.js';
+import {
+  batchStatusCheckerTool,
+  handleBatchStatusCheck,
+} from './tools/batchStatusChecker.js';
 
 // Create MCP server instance
 const server = new Server(
@@ -50,6 +64,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: [
       questionGeneratorTool,
+      questionBatchGeneratorTool,
+      batchStatusCheckerTool,
       questionQualityTool,
       domainCoverageTool,
       questionInsertTool,
@@ -67,6 +83,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     switch (name) {
       case 'cloudprepper_generate_question':
         return await handleQuestionGeneration(args);
+
+      case 'cloudprepper_generate_batch':
+        return await handleQuestionBatchGeneration(args);
+
+      case 'cloudprepper_check_batch_status':
+        return await handleBatchStatusCheck(args);
 
       case 'cloudprepper_analyze_quality':
         return await handleQualityAnalysis(args);

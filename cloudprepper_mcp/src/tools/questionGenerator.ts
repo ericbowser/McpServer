@@ -93,11 +93,8 @@ export async function handleQuestionGeneration(
   // Validate input
   const validated = QuestionGenerationSchema.parse(args);
 
-  // Build generation prompt
-  const prompt = buildGenerationPrompt(validated);
-
-  // Generate questions (mock for now - will integrate Claude API later)
-  const questions = await generateQuestions(prompt, validated.count);
+  // Generate questions from API
+  const questions = await generateQuestions(validated);
 
   // Format response based on output_format
   if (validated.output_format === 'sql') {
@@ -191,55 +188,99 @@ Generate the question(s) now.`;
   return prompt;
 }
 
-// Mock generation for now - will replace with Claude API call
+// Call the cloud_prepper_api to generate real questions
 async function generateQuestions(
-  prompt: string,
-  count: number
+  params: QuestionGenerationInput
 ): Promise<GeneratedQuestion[]> {
-  // This is a placeholder that returns a sample question
-  // In production, this would call the Claude API with the prompt
-  const sampleQuestion: GeneratedQuestion = {
-    question_text:
-      'A company is migrating their on-premises application to AWS. The application requires consistent low-latency access to a PostgreSQL database with automatic failover capabilities. The database must be able to handle read-heavy workloads during business hours and requires encryption at rest. Which solution best meets these requirements?',
-    options: [
-      'Deploy Amazon RDS for PostgreSQL with Multi-AZ deployment, enable encryption at rest, and create read replicas in the same region',
-      'Deploy Amazon Aurora PostgreSQL with a cluster configuration spanning multiple AZs, enable encryption at rest, and use Aurora Auto Scaling for read replicas',
-      'Deploy PostgreSQL on EC2 instances with EBS volumes, configure synchronous replication using streaming replication, and enable EBS encryption',
-      'Deploy Amazon Redshift with encryption enabled and configure distribution keys for optimal read performance',
-    ],
-    correct_answers: [1],
-    explanation:
-      'Aurora PostgreSQL with multi-AZ clustering (Option B) is the best choice because:\n\n' +
-      '**Why B is correct:**\n' +
-      '- Aurora automatically replicates data across 3 AZs with 6 copies\n' +
-      '- Provides automatic failover in under 30 seconds\n' +
-      '- Aurora Auto Scaling automatically adds/removes read replicas based on load\n' +
-      '- Native encryption at rest using KMS\n' +
-      '- Superior performance for read-heavy workloads with up to 15 read replicas\n\n' +
-      '**Why other options are less suitable:**\n' +
-      '- Option A: RDS Multi-AZ provides failover but limited to 5 read replicas and slower failover than Aurora\n' +
-      '- Option C: Self-managed PostgreSQL requires manual configuration, monitoring, and failover orchestration, increasing operational overhead\n' +
-      '- Option D: Redshift is a data warehouse solution optimized for OLAP workloads, not OLTP applications requiring low-latency access',
-    domain: 'Design High-Performing Architectures',
-    subdomain: 'Database solutions',
-    cognitive_level: CognitiveLevel.APPLICATION,
-    skill_level: SkillLevel.INTERMEDIATE,
-    tags: ['aurora', 'postgresql', 'high-availability', 'read-replicas', 'multi-az'],
-    references: [
-      'AWS Aurora Documentation',
-      'RDS Multi-AZ Deployments',
-      'Database Migration Best Practices',
-    ],
-  };
+  const baseUrl = process.env.CLOUDPREPPER_BASE_URL || 'http://localhost:36236';
+  const endpoint = process.env.CLOUDPREPPER_GENERATE_QUESTION || '/api/questions/generateQuestion';
+  const apiToken = process.env.CLOUDPREPPER_API_TOKEN;
 
-  // Return array of sample questions (would be real generation in production)
-  return Array(count).fill(sampleQuestion);
+  if (!apiToken) {
+    throw new Error(
+      'CLOUDPREPPER_API_TOKEN is not set in environment variables'
+    );
+  }
+
+  try {
+    const response = await fetch(`${baseUrl}${endpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiToken}`,
+      },
+      body: JSON.stringify({
+        certification_type: params.certification_type,
+        domain_name: params.domain_name,
+        cognitive_level: params.cognitive_level,
+        skill_level: params.skill_level,
+        count: params.count,
+        scenario_context: params.scenario_context,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = (await response.json().catch(() => ({}))) as Record<
+        string,
+        unknown
+      >;
+      throw new Error(
+        `API request failed with status ${response.status}: ${
+          (errorData.error as string) || response.statusText
+        }`
+      );
+    }
+
+    const data = (await response.json()) as Record<string, unknown>;
+
+    if (
+      !data.success ||
+      !Array.isArray(data.questions)
+    ) {
+      throw new Error(
+        'Invalid API response: expected success flag and questions array'
+      );
+    }
+
+    // Map API response to GeneratedQuestion type
+    return (data.questions as Array<Record<string, unknown>>).map(
+      (q: Record<string, unknown>) => {
+        const correctAnswers = q.correct_answers as number[];
+        const multipleAnswers = correctAnswers.length > 1;
+        return {
+          question_text: q.question_text as string,
+          options: q.options as string[],
+          correct_answers: correctAnswers,
+          multiple_answers: multipleAnswers ? "1" : "0",
+          explanation: q.explanation as string,
+          domain: (q.domain as string) || params.domain_name || 'General',
+          category: (q.category as string) || (q.subdomain as string) || 'Certification Topic',
+          cognitive_level:
+            (q.cognitive_level as CognitiveLevel) ||
+            params.cognitive_level ||
+            CognitiveLevel.APPLICATION,
+          skill_level:
+            (q.skill_level as SkillLevel) ||
+            params.skill_level ||
+            SkillLevel.INTERMEDIATE,
+          tags: (q.tags as string[]) || [],
+          references: (q.references as string[]) || [],
+        };
+      }
+    );
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `Failed to generate questions from API: ${errorMessage}`
+    );
+  }
 }
 
 // Format questions as SQL INSERT statements
-function formatQuestionsAsSQL(
+export function formatQuestionsAsSQL(
   questions: GeneratedQuestion[],
-  metadata: QuestionGenerationInput
+  metadata: Pick<QuestionGenerationInput, 'certification_type' | 'domain_name'>
 ): string {
   const sqlStatements: string[] = [];
   
@@ -272,7 +313,7 @@ function formatQuestionsAsSQL(
     // Build explanation_details JSONB
     const explanationDetails = {
       domain: question.domain,
-      subdomain: question.subdomain,
+      category: question.category,
       tags: question.tags || [],
       references: question.references || [],
     };
@@ -306,7 +347,7 @@ VALUES (
   ${correctAnswer},
   '${explanation}',
   '${explanationDetailsJson}'::jsonb,
-  ${multipleAnswers},
+  ${multipleAnswers ? '1' : '0'},
   ${correctAnswersSQL},
   '${question.cognitive_level}',
   '${question.skill_level}'
