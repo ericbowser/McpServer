@@ -6,11 +6,8 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-// @ts-ignore - JavaScript logger module
-import logger from '../logs/cloudPrepperLog.js';
-const _logger = logger();
-
-_logger.info('Starting CloudPrepper MCP server');
+// Logger removed - MCP servers must only output JSON-RPC to stdout
+// All logging goes to stderr via console.error() to avoid breaking protocol
 
 // Import tool definitions and handlers
 import {

@@ -4,10 +4,13 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { GeneratedQuestion, CognitiveLevel, SkillLevel, CertificationType } from '../types/index.js';
 import { formatQuestionsAsSQL } from './questionGenerator.js';
-// @ts-ignore - JavaScript logger module
-import logger from '../../logs/cloudPrepperLog.js';
-
-const _logger = logger();
+// Logger stub - outputs to stderr to avoid breaking MCP JSON-RPC protocol
+const _logger = {
+  info: (...args: unknown[]) => console.error('[INFO]', ...args),
+  error: (...args: unknown[]) => console.error('[ERROR]', ...args),
+  warn: (...args: unknown[]) => console.error('[WARN]', ...args),
+  debug: (...args: unknown[]) => console.error('[DEBUG]', ...args),
+};
 
 // Get directory paths - save to questions directory relative to project root
 const __filename = fileURLToPath(import.meta.url);

@@ -70,3 +70,7 @@ env.json
 .vscode/
 .idea/
 .run/
+
+cloudprepper_mcp/node_modules/
+cloudprepper_mcp/docs/
+cloudprepper_mcp/dist/

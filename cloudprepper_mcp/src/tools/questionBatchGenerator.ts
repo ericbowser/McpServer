@@ -11,10 +11,13 @@ import {
 } from '../types/index.js';
 import { CURRENT_YEAR } from '../constants.js';
 import { formatQuestionsAsSQL } from './questionGenerator.js';
-// @ts-ignore - JavaScript logger module
-import logger from '../../logs/cloudPrepperLog.js';
-
-const _logger = logger();
+// Logger stub - outputs to stderr to avoid breaking MCP JSON-RPC protocol
+const _logger = {
+  info: (...args: unknown[]) => console.error('[INFO]', ...args),
+  error: (...args: unknown[]) => console.error('[ERROR]', ...args),
+  warn: (...args: unknown[]) => console.error('[WARN]', ...args),
+  debug: (...args: unknown[]) => console.error('[DEBUG]', ...args),
+};
 
 // Get directory paths - save to questions directory relative to project root
 const __filename = fileURLToPath(import.meta.url);
@@ -26,8 +29,14 @@ const questionsDir = path.join(__dirname, '..', '..', 'questions');
 export const QuestionBatchGenerationSchema = z.object({
   certification_type: z.nativeEnum(CertificationType),
   domain_name: z.nativeEnum(CloudPlusDomain).optional(),
-  cognitive_level: z.nativeEnum(CognitiveLevel).optional(),
-  skill_level: z.nativeEnum(SkillLevel).optional(),
+  cognitive_level: z.union([
+    z.nativeEnum(CognitiveLevel),
+    z.array(z.nativeEnum(CognitiveLevel))
+  ]).optional(),
+  skill_level: z.union([
+    z.nativeEnum(SkillLevel),
+    z.array(z.nativeEnum(SkillLevel))
+  ]).optional(),
   count: z.number().min(1).max(50).default(1),
   scenario_context: z.string().optional(),
   output_format: z.enum(['json', 'sql']).optional().default('json'),
@@ -82,14 +91,40 @@ Note: For smaller batches (1-10 questions), consider using cloudprepper_generate
         description: 'Specific CompTIA Cloud+ domain to focus on (optional)',
       },
       cognitive_level: {
-        type: 'string',
-        enum: Object.values(CognitiveLevel),
-        description: "Bloom's taxonomy level (optional)",
+        oneOf: [
+          {
+            type: 'string',
+            enum: Object.values(CognitiveLevel),
+            description: "Bloom's taxonomy level (optional, single value)",
+          },
+          {
+            type: 'array',
+            items: {
+              type: 'string',
+              enum: Object.values(CognitiveLevel),
+            },
+            description: "Bloom's taxonomy levels (optional, array for batch generation - tells backend what kinds of questions to create)",
+          },
+        ],
+        description: "Bloom's taxonomy level(s) - can be a single value or array for batch generation",
       },
       skill_level: {
-        type: 'string',
-        enum: Object.values(SkillLevel),
-        description: 'Target skill level (optional)',
+        oneOf: [
+          {
+            type: 'string',
+            enum: Object.values(SkillLevel),
+            description: 'Target skill level (optional, single value)',
+          },
+          {
+            type: 'array',
+            items: {
+              type: 'string',
+              enum: Object.values(SkillLevel),
+            },
+            description: 'Target skill levels (optional, array for batch generation - tells backend what kinds of questions to create)',
+          },
+        ],
+        description: 'Target skill level(s) - can be a single value or array for batch generation',
       },
       count: {
         type: 'number',
@@ -148,11 +183,23 @@ export async function handleQuestionBatchGeneration(
   _logger.info('Validating input parameters...');
   const validated = QuestionBatchGenerationSchema.parse(args);
   _logger.info('✓ Input validation successful');
+  // Normalize for logging
+  const cognitiveLevelsForLog = Array.isArray(validated.cognitive_level)
+    ? validated.cognitive_level
+    : validated.cognitive_level
+    ? [validated.cognitive_level]
+    : undefined;
+  const skillLevelsForLog = Array.isArray(validated.skill_level)
+    ? validated.skill_level
+    : validated.skill_level
+    ? [validated.skill_level]
+    : undefined;
+
   _logger.info('Validated Parameters:', {
     certification_type: validated.certification_type,
     domain_name: validated.domain_name,
-    cognitive_level: validated.cognitive_level,
-    skill_level: validated.skill_level,
+    cognitive_levels: cognitiveLevelsForLog,
+    skill_levels: skillLevelsForLog,
     count: validated.count,
     output_format: validated.output_format,
     scenario_context: validated.scenario_context ? `[${validated.scenario_context.length} chars]` : 'not provided',
@@ -221,8 +268,8 @@ export async function handleQuestionBatchGeneration(
                 metadata: {
                   certification_type: validated.certification_type,
                   domain_name: validated.domain_name,
-                  cognitive_level: validated.cognitive_level,
-                  skill_level: validated.skill_level,
+                  cognitive_levels: cognitiveLevelsForLog,
+                  skill_levels: skillLevelsForLog,
                   batch_processing: true,
                 },
               },
@@ -253,8 +300,8 @@ export async function handleQuestionBatchGeneration(
       metadata: {
         certification_type: validated.certification_type,
         domain_name: validated.domain_name,
-        cognitive_level: validated.cognitive_level,
-        skill_level: validated.skill_level,
+        cognitive_levels: cognitiveLevelsForLog,
+        skill_levels: skillLevelsForLog,
         batch_processing: true,
       },
     },
@@ -302,13 +349,13 @@ export async function handleQuestionBatchGeneration(
               file_path: jsonFilePath,
               filename: jsonFilename,
               count: questions.length,
-              metadata: {
-                certification_type: validated.certification_type,
-                domain_name: validated.domain_name,
-                cognitive_level: validated.cognitive_level,
-                skill_level: validated.skill_level,
-                batch_processing: true,
-              },
+                metadata: {
+                  certification_type: validated.certification_type,
+                  domain_name: validated.domain_name,
+                  cognitive_levels: cognitiveLevelsForLog,
+                  skill_levels: skillLevelsForLog,
+                  batch_processing: true,
+                },
             },
             null,
             2
@@ -451,12 +498,24 @@ async function generateBatchQuestions(
     );
   }
 
+  // Normalize cognitive_level and skill_level to arrays for backend
+  const cognitiveLevels = Array.isArray(params.cognitive_level)
+    ? params.cognitive_level
+    : params.cognitive_level
+    ? [params.cognitive_level]
+    : undefined;
+  const skillLevels = Array.isArray(params.skill_level)
+    ? params.skill_level
+    : params.skill_level
+    ? [params.skill_level]
+    : undefined;
+
   _logger.info(`Calling batch API: ${apiUrl}`);
   _logger.info('Request payload:', {
     certification_type: params.certification_type,
     domain_name: params.domain_name,
-    cognitive_level: params.cognitive_level,
-    skill_level: params.skill_level,
+    cognitive_levels: cognitiveLevels,
+    skill_levels: skillLevels,
     count: params.count,
     scenario_context: params.scenario_context ? 'provided' : 'not provided',
   });
@@ -483,8 +542,8 @@ async function generateBatchQuestions(
       const requestBody = {
         certification_type: params.certification_type,
         domain_name: params.domain_name,
-        cognitive_level: params.cognitive_level,
-        skill_level: params.skill_level,
+        cognitive_levels: cognitiveLevels,
+        skill_levels: skillLevels,
         count: params.count,
         scenario_context: params.scenario_context,
       };
@@ -496,14 +555,7 @@ async function generateBatchQuestions(
           'Content-Type': 'application/json',
           Authorization: `Bearer ${apiToken}`,
         },
-        body: JSON.stringify({
-          certification_type: params.certification_type,
-          domain_name: params.domain_name,
-          cognitive_level: params.cognitive_level,
-          skill_level: params.skill_level,
-          count: params.count,
-          scenario_context: params.scenario_context,
-        }),
+        body: JSON.stringify(requestBody),
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
@@ -811,8 +863,8 @@ async function generateBatchQuestions(
                 body: JSON.stringify({
                   certification_type: params.certification_type,
                   domain_name: params.domain_name,
-                  cognitive_level: params.cognitive_level,
-                  skill_level: params.skill_level,
+                  cognitive_levels: cognitiveLevels,
+                  skill_levels: skillLevels,
                   count: currentCount,
                   scenario_context: params.scenario_context,
                 }),
@@ -959,6 +1011,14 @@ function mapQuestionsToGenerated(
 ): GeneratedQuestion[] {
   _logger.info(`\n--- Mapping Questions to GeneratedQuestion Format ---`);
   _logger.info(`Input questions count: ${questions.length}`);
+  // Normalize for fallback use
+  const fallbackCognitiveLevel = Array.isArray(params.cognitive_level)
+    ? params.cognitive_level[0]
+    : params.cognitive_level;
+  const fallbackSkillLevel = Array.isArray(params.skill_level)
+    ? params.skill_level[0]
+    : params.skill_level;
+
   _logger.info(`Mapping parameters:`, {
     provided_domain: params.domain_name,
     provided_cognitive_level: params.cognitive_level,
@@ -978,11 +1038,11 @@ function mapQuestionsToGenerated(
       category: (q.category as string) || (q.subdomain as string) || 'Certification Topic',
       cognitive_level:
         (q.cognitive_level as CognitiveLevel) ||
-        params.cognitive_level ||
+        fallbackCognitiveLevel ||
         CognitiveLevel.APPLICATION,
       skill_level:
         (q.skill_level as SkillLevel) ||
-        params.skill_level ||
+        fallbackSkillLevel ||
         SkillLevel.INTERMEDIATE,
       tags: (q.tags as string[]) || [],
       references: (q.references as string[]) || [],
