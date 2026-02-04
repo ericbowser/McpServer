@@ -23,7 +23,7 @@
   "author": "Eric",
   "license": "MIT",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.4",
+    "@modelcontextprotocol/sdk": "^1.26.0",
     "axios": "^1.7.2",
     "pg": "^8.12.0"
   },
